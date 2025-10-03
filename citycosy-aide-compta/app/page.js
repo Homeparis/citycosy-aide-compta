@@ -49,9 +49,10 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map((row, index) => {
-      // Extraire UNIQUEMENT le code de réservation au format HMxxxxxx
+      // Extraire le code de réservation Airbnb (10 caractères alphanumériques)
       const sourceText = (row.SourceText || '').toString();
-      const match = sourceText.match(/HM[A-Z0-9]{8}/i);
+      // Chercher n'importe quelle suite de 10 caractères alphanumériques en majuscules
+      const match = sourceText.match(/[A-Z0-9]{10}/i);
       const codeClean = match ? match[0].toUpperCase() : '';
       
       // Log des lignes sans code pour debug
@@ -88,9 +89,9 @@ export default function Home() {
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
-      // Extraire UNIQUEMENT le code de réservation au format HMxxxxxx
+      // Extraire le code de réservation Airbnb (10 caractères alphanumériques)
       const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
-      const match = codeRaw.match(/HM[A-Z0-9]{8}/i);
+      const match = codeRaw.match(/[A-Z0-9]{10}/i);
       const codeClean = match ? match[0].toUpperCase() : '';
       
       return {
