@@ -48,11 +48,16 @@ export default function Home() {
     const text = await file.text();
     const parsed = parseCSV(text);
     
-    const data = parsed.map(row => {
+    const data = parsed.map((row, index) => {
       // Extraire UNIQUEMENT le code de réservation au format HMxxxxxx
       const sourceText = (row.SourceText || '').toString();
       const match = sourceText.match(/HM[A-Z0-9]{8}/i);
       const codeClean = match ? match[0].toUpperCase() : '';
+      
+      // Log des lignes sans code pour debug
+      if (!codeClean && sourceText && index < 5) {
+        console.log(`Lodgify ligne ${index}: SourceText="${sourceText}" → Pas de code trouvé`);
+      }
       
       return {
         codeResa: codeClean,
@@ -62,7 +67,8 @@ export default function Home() {
         depart: row.DateDeparture || '',
         source: row.Source || 'Lodgify',
         montantOriginal: parseFloat((row.TotalAmount || '0').replace(/\s/g, '').replace(',', '.')),
-        internalCode: row.InternalCode || ''
+        internalCode: row.InternalCode || '',
+        sourceTextRaw: sourceText  // Garder pour debug
       };
     });
 
@@ -136,10 +142,18 @@ export default function Home() {
     
     // Test de matching sur les codes problématiques mentionnés
     const problematicCodes = ['HM5F9NT8R9', 'HMPR83BAE3', 'HMDRJDTRFE'];
+    console.log('=== TEST CODES PROBLÉMATIQUES ===');
     problematicCodes.forEach(code => {
       const inAirbnb = airbnbGrouped[code] ? 'OUI' : 'NON';
+      const lodgifyEntry = lodgifyData.find(l => l.client && l.appartement);
       const inLodgify = lodgifyData.find(l => l.codeResa === code) ? 'OUI' : 'NON';
       console.log(`${code}: Airbnb=${inAirbnb}, Lodgify=${inLodgify}`);
+    });
+    
+    // Afficher quelques SourceText bruts des lignes Lodgify pour debug
+    console.log('=== QUELQUES SourceText BRUTS ===');
+    lodgifyData.slice(0, 10).forEach((l, i) => {
+      console.log(`${i}: "${l.sourceTextRaw}" → code: "${l.codeResa}"`);
     });
 
     // Calculer sommes et nb paiements
