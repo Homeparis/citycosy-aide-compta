@@ -98,7 +98,7 @@ export default function Home() {
     const airbnbGrouped = {};
     airbnbData.forEach(row => {
       const code = row.codeResa;
-      if (!code || code === 'aucun détail' || code === '') {
+      if (!code || code === 'AUCUN DÉTAIL' || code === '') {
         // Ligne sans détail - on la garde à part
         if (!airbnbGrouped['_SANS_DETAIL']) {
           airbnbGrouped['_SANS_DETAIL'] = [];
@@ -111,6 +111,9 @@ export default function Home() {
         airbnbGrouped[code].push(row);
       }
     });
+
+    console.log('Codes Airbnb trouvés:', Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL'));
+    console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa));
 
     // Calculer sommes et nb paiements
     const airbnbSums = {};
@@ -259,7 +262,7 @@ export default function Home() {
         r.depart,
         `"${r.client}"`,
         r.codeResa,
-        r.montantFinal.toFixed(2) + '€',
+        r.montantFinal.toFixed(2).replace('.', ',') + '€',
         r.nbPaiements > 1 ? r.nbPaiements : '',
         r.site,
         r.statut,
@@ -287,14 +290,14 @@ export default function Home() {
       <div className="max-w-7xl mx-auto">
         
         <div className="text-center mb-12">
-          <img 
-            src="https://l.icdbcdn.com/oh/4ba79e21-32a0-45a0-90ea-1ab3b2c2f813.png?w=400" 
-            alt="CityCosy Logo" 
-            className="h-20 mx-auto mb-6"
-          />
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <div className="inline-block bg-gradient-to-r from-red-600 to-black px-8 py-4 rounded-2xl shadow-2xl mb-6">
+            <h1 className="text-5xl font-black text-white tracking-tight">
+              City<span className="text-red-300">Cosy</span>
+            </h1>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Aide Comptabilité
-          </h1>
+          </h2>
           <p className="text-lg text-gray-600">Fusion intelligente Lodgify + Airbnb</p>
         </div>
 
