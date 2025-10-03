@@ -48,16 +48,22 @@ export default function Home() {
     const text = await file.text();
     const parsed = parseCSV(text);
     
-    const data = parsed.map(row => ({
-      codeResa: (row.SourceText || '').trim().toUpperCase(),
-      client: row.Name || '',
-      appartement: row.HouseName || '',
-      arrivee: row.DateArrival || '',
-      depart: row.DateDeparture || '',
-      source: row.Source || 'Lodgify',
-      montantOriginal: parseFloat((row.TotalAmount || '0').replace(',', '.')),
-      internalCode: row.InternalCode || ''
-    }));
+    const data = parsed.map(row => {
+      // Nettoyer le code : supprimer tous les espaces, caractères invisibles, mettre en majuscules
+      const codeRaw = (row.SourceText || '').toString();
+      const codeClean = codeRaw.replace(/\s+/g, '').replace(/[^\x20-\x7E]/g, '').trim().toUpperCase();
+      
+      return {
+        codeResa: codeClean,
+        client: row.Name || '',
+        appartement: row.HouseName || '',
+        arrivee: row.DateArrival || '',
+        depart: row.DateDeparture || '',
+        source: row.Source || 'Lodgify',
+        montantOriginal: parseFloat((row.TotalAmount || '0').replace(',', '.')),
+        internalCode: row.InternalCode || ''
+      };
+    });
 
     setLodgifyData(data);
     alert(`✅ ${data.length} réservations Lodgify chargées`);
@@ -75,8 +81,12 @@ export default function Home() {
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
+      // Nettoyer le code : supprimer tous les espaces, caractères invisibles, mettre en majuscules
+      const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
+      const codeClean = codeRaw.replace(/\s+/g, '').replace(/[^\x20-\x7E]/g, '').trim().toUpperCase();
+      
       return {
-        codeResa: (row['code réservation'] || row['code reservation'] || '').trim().toUpperCase(),
+        codeResa: codeClean,
         client: (row.client || row.Client || '').trim(),
         appartement: (row.appartement || row.Appartement || '').trim(),
         montant: parseFloat(montantClean) || 0,
@@ -112,8 +122,15 @@ export default function Home() {
       }
     });
 
+    console.log('=== DEBUG MATCHING ===');
     console.log('Codes Airbnb trouvés:', Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL'));
-    console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa));
+    console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa).filter(c => c));
+    
+    // Afficher quelques exemples pour comparer
+    const airbnbSample = Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL').slice(0, 3);
+    const lodgifySample = lodgifyData.map(l => l.codeResa).filter(c => c).slice(0, 3);
+    console.log('Exemples Airbnb:', airbnbSample);
+    console.log('Exemples Lodgify:', lodgifySample);
 
     // Calculer sommes et nb paiements
     const airbnbSums = {};
@@ -428,10 +445,13 @@ export default function Home() {
                           )}
                         </td>
                         <td className="px-3 py-3 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            row.site === 'Airbnb' ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold text-white ${
+                            row.site === 'Airbnb' ? 'bg-orange-400' : 
+                            row.site === 'Booking.com' ? 'bg-blue-600' :
+                            row.site === 'Manuel' || row.site === 'Site web' ? 'bg-black' :
+                            'bg-gray-500'
                           }`}>
-                            {row.site}
+                            {row.site === 'Manuel' || row.site === 'Site web' ? 'CityCosy' : row.site}
                           </span>
                         </td>
                         <td className="px-3 py-3 text-center">
