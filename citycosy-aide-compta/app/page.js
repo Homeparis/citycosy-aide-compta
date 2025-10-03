@@ -49,7 +49,7 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map(row => ({
-      codeResa: row.SourceText || '',
+      codeResa: (row.SourceText || '').trim().toUpperCase(),
       client: row.Name || '',
       appartement: row.HouseName || '',
       arrivee: row.DateArrival || '',
@@ -70,13 +70,19 @@ export default function Home() {
     const text = await file.text();
     const parsed = parseCSV(text);
     
-    const data = parsed.map(row => ({
-      codeResa: (row['code réservation'] || row['code reservation'] || '').trim(),
-      client: (row.client || row.Client || '').trim(),
-      appartement: (row.appartement || row.Appartement || '').trim(),
-      montant: parseFloat((row.Montant || row.montant || '0').toString().replace(/[€$,\s]/g, '')) || 0,
-      date: row.date || ''
-    }));
+    const data = parsed.map(row => {
+      // Corriger le montant : virgule française → point décimal
+      const montantStr = (row.Montant || row.montant || '0').toString().trim();
+      const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
+      
+      return {
+        codeResa: (row['code réservation'] || row['code reservation'] || '').trim().toUpperCase(),
+        client: (row.client || row.Client || '').trim(),
+        appartement: (row.appartement || row.Appartement || '').trim(),
+        montant: parseFloat(montantClean) || 0,
+        date: row.date || ''
+      };
+    });
 
     setAirbnbData(data);
     alert(`✅ ${data.length} paiements Airbnb chargés`);
@@ -277,14 +283,19 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-800 mb-3">
-            🏠 CityCosy Aide Compta
+          <img 
+            src="https://l.icdbcdn.com/oh/4ba79e21-32a0-45a0-90ea-1ab3b2c2f813.png?w=400" 
+            alt="CityCosy Logo" 
+            className="h-20 mx-auto mb-6"
+          />
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Aide Comptabilité
           </h1>
-          <p className="text-xl text-gray-600">Fusion intelligente Lodgify + Airbnb</p>
+          <p className="text-lg text-gray-600">Fusion intelligente Lodgify + Airbnb</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -327,7 +338,7 @@ export default function Home() {
         <div className="flex justify-center gap-4 mb-8">
           <button
             onClick={fusionner}
-            className="bg-indigo-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 transition flex items-center gap-2"
+            className="bg-red-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-red-700 transition flex items-center gap-2 shadow-lg"
           >
             <RefreshCw size={24} />
             Fusionner & Calculer
@@ -336,7 +347,7 @@ export default function Home() {
           <button
             onClick={exporter}
             disabled={fusedData.length === 0}
-            className="bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition flex items-center gap-2 disabled:bg-gray-400"
+            className="bg-black text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:bg-gray-400 shadow-lg"
           >
             <Download size={24} />
             Exporter CSV
@@ -344,7 +355,7 @@ export default function Home() {
 
           <button
             onClick={reinitialiser}
-            className="bg-gray-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-600 transition"
+            className="bg-white text-gray-700 border-2 border-gray-300 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition shadow-lg"
           >
             Réinitialiser
           </button>
@@ -353,85 +364,87 @@ export default function Home() {
         {fusedData.length > 0 && (
           <>
             <div className="grid grid-cols-5 gap-4 mb-8">
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-3xl font-bold text-indigo-600">{stats.total}</div>
-                <div className="text-sm text-gray-600">Total</div>
+              <div className="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-red-600">
+                <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+                <div className="text-sm text-gray-600 font-medium">Total</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
+              <div className="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-green-600">
                 <div className="text-3xl font-bold text-green-600">{stats.matched}</div>
-                <div className="text-sm text-gray-600">Matchés</div>
+                <div className="text-sm text-gray-600 font-medium">Matchés</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">{stats.lodgifyOnly}</div>
-                <div className="text-sm text-gray-600">Lodgify seul</div>
+              <div className="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-black">
+                <div className="text-3xl font-bold text-gray-900">{stats.lodgifyOnly}</div>
+                <div className="text-sm text-gray-600 font-medium">Lodgify seul</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-3xl font-bold text-pink-600">{stats.airbnbOnly}</div>
-                <div className="text-sm text-gray-600">Airbnb seul</div>
+              <div className="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-gray-400">
+                <div className="text-3xl font-bold text-gray-700">{stats.airbnbOnly}</div>
+                <div className="text-sm text-gray-600 font-medium">Airbnb seul</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
+              <div className="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-orange-500">
                 <div className="text-3xl font-bold text-orange-600">{stats.alerts}</div>
-                <div className="text-sm text-gray-600">Alertes</div>
+                <div className="text-sm text-gray-600 font-medium">Alertes</div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800">
-                📊 Résultats fusionnés
-              </h3>
-              <div className="overflow-x-auto">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-red-600 to-black p-6">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <span>📊</span> Résultats de la fusion
+                </h3>
+              </div>
+              <div className="overflow-x-auto p-6">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-3 py-2 text-left font-bold">Appartement</th>
-                      <th className="px-3 py-2 text-left font-bold">Arrivée</th>
-                      <th className="px-3 py-2 text-left font-bold">Départ</th>
-                      <th className="px-3 py-2 text-left font-bold">Client</th>
-                      <th className="px-3 py-2 text-left font-bold">Code</th>
-                      <th className="px-3 py-2 text-right font-bold">Montant</th>
-                      <th className="px-3 py-2 text-center font-bold">Nb Paie.</th>
-                      <th className="px-3 py-2 text-center font-bold">Site</th>
-                      <th className="px-3 py-2 text-center font-bold">Statut</th>
-                      <th className="px-3 py-2 text-left font-bold">Alerte</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Appartement</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Arrivée</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Départ</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Client</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Code</th>
+                      <th className="px-3 py-3 text-right font-bold text-gray-900">Montant</th>
+                      <th className="px-3 py-3 text-center font-bold text-gray-900">Nb Paie.</th>
+                      <th className="px-3 py-3 text-center font-bold text-gray-900">Site</th>
+                      <th className="px-3 py-3 text-center font-bold text-gray-900">Statut</th>
+                      <th className="px-3 py-3 text-left font-bold text-gray-900">Alerte</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fusedData.map((row, i) => (
-                      <tr key={i} className={`border-t hover:bg-gray-50 ${row.alerte ? 'bg-orange-50' : ''}`}>
-                        <td className="px-3 py-2 font-medium">{row.appartement}</td>
-                        <td className="px-3 py-2">{row.arrivee}</td>
-                        <td className="px-3 py-2">{row.depart}</td>
-                        <td className="px-3 py-2">{row.client}</td>
-                        <td className="px-3 py-2 text-xs text-gray-600">{row.codeResa}</td>
-                        <td className="px-3 py-2 text-right font-semibold">{row.montantFinal.toFixed(2)}€</td>
-                        <td className="px-3 py-2 text-center">
+                      <tr key={i} className={`border-t hover:bg-gray-50 ${row.alerte ? 'bg-red-50' : ''}`}>
+                        <td className="px-3 py-3 font-semibold text-gray-900">{row.appartement}</td>
+                        <td className="px-3 py-3 text-gray-700">{row.arrivee}</td>
+                        <td className="px-3 py-3 text-gray-700">{row.depart}</td>
+                        <td className="px-3 py-3 text-gray-900">{row.client}</td>
+                        <td className="px-3 py-3 text-xs text-gray-600">{row.codeResa}</td>
+                        <td className="px-3 py-3 text-right font-bold text-gray-900">{row.montantFinal.toFixed(2)}€</td>
+                        <td className="px-3 py-3 text-center">
                           {row.nbPaiements > 1 && (
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">
+                            <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
                               {row.nbPaiements}x
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-center">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            row.site === 'Airbnb' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'
+                        <td className="px-3 py-3 text-center">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            row.site === 'Airbnb' ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'
                           }`}>
                             {row.site}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-center">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        <td className="px-3 py-3 text-center">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             row.statut === 'PAYÉ' ? 'bg-green-100 text-green-800' :
-                            row.statut === 'SANS DÉTAIL' ? 'bg-gray-100 text-gray-800' :
+                            row.statut === 'SANS DÉTAIL' ? 'bg-gray-200 text-gray-700' :
                             'bg-orange-100 text-orange-800'
                           }`}>
                             {row.statut}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-xs text-orange-600">
+                        <td className="px-3 py-3 text-xs text-red-600">
                           {row.alerte && (
                             <div className="flex items-center gap-1">
                               <AlertTriangle size={14} />
-                              <span>{row.alerte}</span>
+                              <span className="font-medium">{row.alerte}</span>
                             </div>
                           )}
                         </td>
