@@ -49,9 +49,10 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map(row => {
-      // Nettoyer le code : supprimer tous les espaces, caractères invisibles, mettre en majuscules
-      const codeRaw = (row.SourceText || '').toString();
-      const codeClean = codeRaw.replace(/\s+/g, '').replace(/[^\x20-\x7E]/g, '').trim().toUpperCase();
+      // Extraire UNIQUEMENT le code de réservation au format HMxxxxxx
+      const sourceText = (row.SourceText || '').toString();
+      const match = sourceText.match(/HM[A-Z0-9]{8}/i);
+      const codeClean = match ? match[0].toUpperCase() : '';
       
       return {
         codeResa: codeClean,
@@ -60,7 +61,7 @@ export default function Home() {
         arrivee: row.DateArrival || '',
         depart: row.DateDeparture || '',
         source: row.Source || 'Lodgify',
-        montantOriginal: parseFloat((row.TotalAmount || '0').replace(',', '.')),
+        montantOriginal: parseFloat((row.TotalAmount || '0').replace(/\s/g, '').replace(',', '.')),
         internalCode: row.InternalCode || ''
       };
     });
@@ -81,9 +82,10 @@ export default function Home() {
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
-      // Nettoyer le code : supprimer tous les espaces, caractères invisibles, mettre en majuscules
+      // Extraire UNIQUEMENT le code de réservation au format HMxxxxxx
       const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
-      const codeClean = codeRaw.replace(/\s+/g, '').replace(/[^\x20-\x7E]/g, '').trim().toUpperCase();
+      const match = codeRaw.match(/HM[A-Z0-9]{8}/i);
+      const codeClean = match ? match[0].toUpperCase() : '';
       
       return {
         codeResa: codeClean,
@@ -127,10 +129,18 @@ export default function Home() {
     console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa).filter(c => c));
     
     // Afficher quelques exemples pour comparer
-    const airbnbSample = Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL').slice(0, 3);
-    const lodgifySample = lodgifyData.map(l => l.codeResa).filter(c => c).slice(0, 3);
+    const airbnbSample = Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL').slice(0, 5);
+    const lodgifySample = lodgifyData.map(l => l.codeResa).filter(c => c).slice(0, 5);
     console.log('Exemples Airbnb:', airbnbSample);
     console.log('Exemples Lodgify:', lodgifySample);
+    
+    // Test de matching sur les codes problématiques mentionnés
+    const problematicCodes = ['HM5F9NT8R9', 'HMPR83BAE3', 'HMDRJDTRFE'];
+    problematicCodes.forEach(code => {
+      const inAirbnb = airbnbGrouped[code] ? 'OUI' : 'NON';
+      const inLodgify = lodgifyData.find(l => l.codeResa === code) ? 'OUI' : 'NON';
+      console.log(`${code}: Airbnb=${inAirbnb}, Lodgify=${inLodgify}`);
+    });
 
     // Calculer sommes et nb paiements
     const airbnbSums = {};
@@ -191,7 +201,9 @@ export default function Home() {
           montantOriginal: lodgify.montantOriginal,
           nbPaiements: 0,
           site: lodgify.source,
-          statut: 'EN ATTENTE PAIEMENT AIRBNB',
+          statut: lodgify.source === 'Booking.com' ? 'CB Booking' : 
+                  (lodgify.source === 'Manuel' || lodgify.source === 'Site web') ? 'Virement' : 
+                  'EN ATTENTE PAIEMENT AIRBNB',
           alerte: '',
           type: 'lodgify-only'
         });
