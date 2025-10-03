@@ -356,7 +356,7 @@ export default function Home() {
             <h1 className="text-5xl font-black text-white tracking-tight">
               City<span className="text-red-300">Cosy</span>
             </h1>
-            <div className="text-red-400 text-xs font-mono mt-1">v29</div>
+            <div className="text-red-400 text-xs font-mono mt-1">v30</div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Aide Comptabilité
@@ -492,7 +492,7 @@ export default function Home() {
                         </td>
                         <td className="px-3 py-3 text-center">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold text-white ${
-                            row.site === 'Airbnb' ? 'bg-orange-400' : 
+                            row.site === 'Airbnb' ? 'bg-[#FF5A5F]' : 
                             row.site === 'Booking.com' ? 'bg-blue-600' :
                             row.site === 'Manuel' || row.site === 'Site web' ? 'bg-black' :
                             'bg-gray-500'
@@ -504,6 +504,8 @@ export default function Home() {
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             row.statut === 'PAYÉ' ? 'bg-green-100 text-green-800' :
                             row.statut === 'SANS DÉTAIL' ? 'bg-gray-200 text-gray-700' :
+                            row.statut === 'CB Booking' ? 'bg-blue-600 text-white' :
+                            row.statut === 'EN ATTENTE PAIEMENT AIRBNB' ? 'bg-[#00A699] text-white' :
                             'bg-orange-100 text-orange-800'
                           }`}>
                             {row.statut}
