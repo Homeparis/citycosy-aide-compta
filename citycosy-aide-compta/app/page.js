@@ -49,10 +49,10 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map((row, index) => {
-      // Extraire le code de réservation Airbnb (10 caractères alphanumériques)
+      // Extraire le code de réservation Airbnb : commence par 2+ lettres, puis lettres/chiffres, total 10 caractères
       const sourceText = (row.SourceText || '').toString();
-      // Chercher n'importe quelle suite de 10 caractères alphanumériques en majuscules
-      const match = sourceText.match(/[A-Z0-9]{10}/i);
+      // Chercher un code qui commence par au moins 2 lettres suivies de chiffres/lettres (10 caractères total)
+      const match = sourceText.match(/\b[A-Z]{2}[A-Z0-9]{8}\b/i);
       const codeClean = match ? match[0].toUpperCase() : '';
       
       // Log des lignes sans code pour debug
@@ -89,9 +89,9 @@ export default function Home() {
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
-      // Extraire le code de réservation Airbnb (10 caractères alphanumériques)
+      // Extraire le code de réservation Airbnb : commence par 2+ lettres, puis lettres/chiffres, total 10 caractères
       const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
-      const match = codeRaw.match(/[A-Z0-9]{10}/i);
+      const match = codeRaw.match(/\b[A-Z]{2}[A-Z0-9]{8}\b/i);
       const codeClean = match ? match[0].toUpperCase() : '';
       
       return {
