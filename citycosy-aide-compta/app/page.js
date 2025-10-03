@@ -49,11 +49,20 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map((row, index) => {
-      // Extraire le code de réservation Airbnb : commence par 2+ lettres, puis lettres/chiffres, total 10 caractères
+      // Extraire le code de réservation Airbnb
       const sourceText = (row.SourceText || '').toString();
-      // Chercher un code qui commence par au moins 2 lettres suivies de chiffres/lettres (10 caractères total)
-      const match = sourceText.match(/\b[A-Z]{2}[A-Z0-9]{8}\b/i);
-      const codeClean = match ? match[0].toUpperCase() : '';
+      // Chercher une suite de 10 caractères alphanumériques
+      const match = sourceText.match(/\b[A-Z0-9]{10}\b/i);
+      let codeClean = match ? match[0].toUpperCase() : '';
+      
+      // Filtrer : garder uniquement si contient à la fois lettres ET chiffres
+      if (codeClean) {
+        const hasLetters = /[A-Z]/i.test(codeClean);
+        const hasDigits = /[0-9]/.test(codeClean);
+        if (!hasLetters || !hasDigits) {
+          codeClean = ''; // Rejeter si que des lettres (CityCosy) ou que des chiffres (Booking)
+        }
+      }
       
       // Log des lignes sans code pour debug
       if (!codeClean && sourceText && index < 5) {
@@ -69,7 +78,7 @@ export default function Home() {
         source: row.Source || 'Lodgify',
         montantOriginal: parseFloat((row.TotalAmount || '0').replace(/\s/g, '').replace(',', '.')),
         internalCode: row.InternalCode || '',
-        sourceTextRaw: sourceText  // Garder pour debug
+        sourceTextRaw: sourceText
       };
     });
 
@@ -89,10 +98,19 @@ export default function Home() {
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
-      // Extraire le code de réservation Airbnb : commence par 2+ lettres, puis lettres/chiffres, total 10 caractères
+      // Extraire le code de réservation Airbnb
       const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
-      const match = codeRaw.match(/\b[A-Z]{2}[A-Z0-9]{8}\b/i);
-      const codeClean = match ? match[0].toUpperCase() : '';
+      const match = codeRaw.match(/\b[A-Z0-9]{10}\b/i);
+      let codeClean = match ? match[0].toUpperCase() : '';
+      
+      // Filtrer : garder uniquement si contient à la fois lettres ET chiffres
+      if (codeClean) {
+        const hasLetters = /[A-Z]/i.test(codeClean);
+        const hasDigits = /[0-9]/.test(codeClean);
+        if (!hasLetters || !hasDigits) {
+          codeClean = ''; // Rejeter si que des lettres ou que des chiffres
+        }
+      }
       
       return {
         codeResa: codeClean,
