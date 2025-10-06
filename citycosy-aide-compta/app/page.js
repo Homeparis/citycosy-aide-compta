@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Upload, Download, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   const [lodgifyData, setLodgifyData] = useState([]);
@@ -49,22 +50,18 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map((row, index) => {
-      // Extraire le code de réservation Airbnb
       const sourceText = (row.SourceText || '').toString();
-      // Chercher une suite de 10 caractères alphanumériques
       const match = sourceText.match(/\b[A-Z0-9]{10}\b/i);
       let codeClean = match ? match[0].toUpperCase() : '';
       
-      // Filtrer : garder uniquement si contient à la fois lettres ET chiffres
       if (codeClean) {
         const hasLetters = /[A-Z]/i.test(codeClean);
         const hasDigits = /[0-9]/.test(codeClean);
         if (!hasLetters || !hasDigits) {
-          codeClean = ''; // Rejeter si que des lettres (CityCosy) ou que des chiffres (Booking)
+          codeClean = '';
         }
       }
       
-      // Log des lignes sans code pour debug
       if (!codeClean && sourceText && index < 5) {
         console.log(`Lodgify ligne ${index}: SourceText="${sourceText}" → Pas de code trouvé`);
       }
@@ -94,21 +91,18 @@ export default function Home() {
     const parsed = parseCSV(text);
     
     const data = parsed.map(row => {
-      // Corriger le montant : virgule française → point décimal
       const montantStr = (row.Montant || row.montant || '0').toString().trim();
       const montantClean = montantStr.replace(/[€$\s]/g, '').replace(',', '.');
       
-      // Extraire le code de réservation Airbnb
       const codeRaw = (row['code réservation'] || row['code reservation'] || '').toString();
       const match = codeRaw.match(/\b[A-Z0-9]{10}\b/i);
       let codeClean = match ? match[0].toUpperCase() : '';
       
-      // Filtrer : garder uniquement si contient à la fois lettres ET chiffres
       if (codeClean) {
         const hasLetters = /[A-Z]/i.test(codeClean);
         const hasDigits = /[0-9]/.test(codeClean);
         if (!hasLetters || !hasDigits) {
-          codeClean = ''; // Rejeter si que des lettres ou que des chiffres
+          codeClean = '';
         }
       }
       
@@ -131,12 +125,10 @@ export default function Home() {
       return;
     }
 
-    // 1. Grouper et sommer les paiements Airbnb par code réservation
     const airbnbGrouped = {};
     airbnbData.forEach(row => {
       const code = row.codeResa;
       if (!code || code === 'AUCUN DÉTAIL' || code === '') {
-        // Ligne sans détail - on la garde à part
         if (!airbnbGrouped['_SANS_DETAIL']) {
           airbnbGrouped['_SANS_DETAIL'] = [];
         }
@@ -152,30 +144,7 @@ export default function Home() {
     console.log('=== DEBUG MATCHING ===');
     console.log('Codes Airbnb trouvés:', Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL'));
     console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa).filter(c => c));
-    
-    // Afficher quelques exemples pour comparer
-    const airbnbSample = Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL').slice(0, 5);
-    const lodgifySample = lodgifyData.map(l => l.codeResa).filter(c => c).slice(0, 5);
-    console.log('Exemples Airbnb:', airbnbSample);
-    console.log('Exemples Lodgify:', lodgifySample);
-    
-    // Test de matching sur les codes problématiques mentionnés
-    const problematicCodes = ['HM5F9NT8R9', 'HMPR83BAE3', 'HMDRJDTRFE'];
-    console.log('=== TEST CODES PROBLÉMATIQUES ===');
-    problematicCodes.forEach(code => {
-      const inAirbnb = airbnbGrouped[code] ? 'OUI' : 'NON';
-      const lodgifyEntry = lodgifyData.find(l => l.client && l.appartement);
-      const inLodgify = lodgifyData.find(l => l.codeResa === code) ? 'OUI' : 'NON';
-      console.log(`${code}: Airbnb=${inAirbnb}, Lodgify=${inLodgify}`);
-    });
-    
-    // Afficher quelques SourceText bruts des lignes Lodgify pour debug
-    console.log('=== QUELQUES SourceText BRUTS ===');
-    lodgifyData.slice(0, 10).forEach((l, i) => {
-      console.log(`${i}: "${l.sourceTextRaw}" → code: "${l.codeResa}"`);
-    });
 
-    // Calculer sommes et nb paiements
     const airbnbSums = {};
     Object.keys(airbnbGrouped).forEach(code => {
       const payments = airbnbGrouped[code];
@@ -191,16 +160,13 @@ export default function Home() {
     const processedAirbnbCodes = new Set();
     const alerts = [];
 
-    // 2. Traiter les réservations Lodgify
     lodgifyData.forEach(lodgify => {
       const code = lodgify.codeResa;
       
-      // Vérifier s'il y a un paiement Airbnb correspondant
       if (code && airbnbSums[code]) {
         const airbnbInfo = airbnbSums[code];
         processedAirbnbCodes.add(code);
 
-        // Vérifier doublons
         const matchingLodgify = lodgifyData.filter(l => l.codeResa === code);
         let alerte = '';
         if (matchingLodgify.length > 1) {
@@ -223,7 +189,6 @@ export default function Home() {
           type: 'matched'
         });
       } else {
-        // Lodgify sans Airbnb
         result.push({
           appartement: lodgify.appartement,
           arrivee: lodgify.arrivee,
@@ -243,7 +208,6 @@ export default function Home() {
       }
     });
 
-    // 3. Traiter les paiements Airbnb sans correspondance Lodgify
     Object.keys(airbnbSums).forEach(code => {
       if (code !== '_SANS_DETAIL' && !processedAirbnbCodes.has(code)) {
         const airbnbInfo = airbnbSums[code];
@@ -266,7 +230,6 @@ export default function Home() {
       }
     });
 
-    // 4. Ajouter les lignes "aucun détail" à la fin
     if (airbnbSums['_SANS_DETAIL']) {
       airbnbSums['_SANS_DETAIL'].details.forEach(payment => {
         result.push({
@@ -286,7 +249,6 @@ export default function Home() {
       });
     }
 
-    // 5. Trier : par appartement puis par date d'arrivée
     const withDetails = result.filter(r => r.type !== 'no-detail');
     const noDetails = result.filter(r => r.type === 'no-detail');
 
@@ -361,13 +323,19 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Aide Comptabilité
           </h2>
-          <p className="text-lg text-gray-600">Fusion intelligente Lodgify + Airbnb</p>
+          <p className="text-lg text-gray-600 mb-6">Fusion intelligente Lodgify + Airbnb</p>
+          
+          <Link href="/factures">
+            <button className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg">
+              Générer des Factures
+            </button>
+          </Link>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-blue-600 mb-4">📘 Lodgify (Réservations)</h2>
+            <h2 className="text-2xl font-bold text-blue-600 mb-4">Lodgify (Réservations)</h2>
             <label className="block">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition">
                 <Upload className="mx-auto mb-3 text-gray-400" size={40} />
@@ -384,7 +352,7 @@ export default function Home() {
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-pink-600 mb-4">💰 Airbnb (Versements)</h2>
+            <h2 className="text-2xl font-bold text-pink-600 mb-4">Airbnb (Versements)</h2>
             <label className="block">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-pink-500 hover:bg-pink-50 cursor-pointer transition">
                 <Upload className="mx-auto mb-3 text-gray-400" size={40} />
