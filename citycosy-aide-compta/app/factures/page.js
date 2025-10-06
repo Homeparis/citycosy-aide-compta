@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Factures() {
   const [invoicesData, setInvoicesData] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(true);
+  const [isPrintingAll, setIsPrintingAll] = useState(false);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -68,35 +70,37 @@ export default function Factures() {
     return dateStr;
   };
 
-  const LogoSVG = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" className="h-16 w-auto mb-4">
-      <path id="curve-logo" d="M 50 30 Q 200 10 350 30" fill="none"/>
-      <text fontFamily="Arial, sans-serif" fontSize="10" fill="#E63946" fontWeight="bold">
-        <textPath href="#curve-logo" startOffset="50%" textAnchor="middle">STRASBOURG</textPath>
-      </text>
-      <path d="M 60 90 L 80 40 L 100 90 Z" fill="#E63946"/>
-      <path d="M 70 70 L 90 70" stroke="#E63946" strokeWidth="8"/>
-      <circle cx="80" cy="35" r="6" fill="#E63946"/>
-      <path d="M 150 45 Q 110 45 110 70 Q 110 95 150 95" fill="none" stroke="#000" strokeWidth="16" strokeLinecap="round"/>
-      <text x="180" y="70" fontFamily="Arial, sans-serif" fontSize="32" fill="#333" fontWeight="300" letterSpacing="2">ITY</text>
-      <text x="280" y="85" fontFamily="Arial, sans-serif" fontSize="28" fill="#333" fontWeight="300">osy</text>
-      <circle cx="320" cy="35" r="4" fill="#FFC107"/>
-      <circle cx="335" cy="30" r="5" fill="#E63946"/>
-      <circle cx="350" cy="40" r="3" fill="#00BCD4"/>
-      <circle cx="365" cy="35" r="4" fill="#9C27B0"/>
-      <circle cx="380" cy="45" r="5" fill="#FFC107"/>
-      <circle cx="345" cy="50" r="3" fill="#4CAF50"/>
-      <circle cx="370" cy="55" r="4" fill="#E63946"/>
-    </svg>
-  );
+  const printAllInvoices = async () => {
+    if (confirm(`Voulez-vous imprimer les ${invoicesData.length} factures ?\n\nElles s'ouvriront successivement pour impression/sauvegarde PDF.`)) {
+      setIsPrintingAll(true);
+      for (let i = 0; i < invoicesData.length; i++) {
+        setCurrentIndex(i);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        window.print();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      setIsPrintingAll(false);
+      alert('Impression terminée !');
+    }
+  };
 
   if (showUpload || invoicesData.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-8">
+      <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-2xl mx-auto">
+          <Link href="/">
+            <button className="mb-6 px-6 py-2 bg-white text-gray-700 rounded-lg font-semibold hover:bg-gray-200 shadow-md transition">
+              ← Retour à l'accueil
+            </button>
+          </Link>
+          
           <div className="bg-white rounded-2xl shadow-2xl p-12 text-center">
-            <LogoSVG />
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Générateur de Factures</h1>
+            <div className="inline-block bg-gradient-to-r from-red-600 to-black px-8 py-4 rounded-2xl shadow-xl mb-6">
+              <h1 className="text-4xl font-black text-white tracking-tight">
+                City<span className="text-red-300">Cosy</span>
+              </h1>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Générateur de Factures</h2>
             <p className="text-lg text-gray-600 mb-8">CityCosy Strasbourg</p>
 
             <label className="block cursor-pointer">
@@ -124,44 +128,63 @@ export default function Factures() {
   const reference = `${currentInvoice['Appartement']} - séjour du ${formatDate(currentInvoice['Arrivée'])} au ${formatDate(currentInvoice['Départ'])}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-4">
+    <div className="min-h-screen bg-gray-100 p-4">
       {/* Contrôles */}
-      <div className="max-w-5xl mx-auto mb-4 bg-white rounded-xl shadow-lg p-4 flex justify-between items-center print:hidden">
-        <button
-          onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-          disabled={currentIndex === 0}
-          className="px-6 py-2 bg-purple-600 text-white rounded-lg disabled:bg-gray-300 hover:bg-purple-700 font-semibold"
-        >
-          ◀ Précédente
-        </button>
+      <div className="max-w-5xl mx-auto mb-4 bg-white rounded-xl shadow-lg p-4 print:hidden">
+        <div className="flex justify-between items-center mb-4">
+          <Link href="/">
+            <button className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700">
+              ← Retour
+            </button>
+          </Link>
+          
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900">{currentIndex + 1} / {invoicesData.length}</div>
+            <div className="text-sm text-gray-600">Factures</div>
+          </div>
 
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{currentIndex + 1} / {invoicesData.length}</div>
-          <div className="text-sm text-gray-600">Factures</div>
+          <button
+            onClick={() => setShowUpload(true)}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700"
+          >
+            Nouveau fichier
+          </button>
         </div>
 
-        <button
-          onClick={() => setCurrentIndex(Math.min(invoicesData.length - 1, currentIndex + 1))}
-          disabled={currentIndex === invoicesData.length - 1}
-          className="px-6 py-2 bg-purple-600 text-white rounded-lg disabled:bg-gray-300 hover:bg-purple-700 font-semibold"
-        >
-          Suivante ▶
-        </button>
-      </div>
+        <div className="flex justify-between items-center">
+          <button
+            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+            disabled={currentIndex === 0}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg disabled:bg-gray-300 hover:bg-purple-700 font-semibold"
+          >
+            ◀ Précédente
+          </button>
 
-      <div className="max-w-5xl mx-auto mb-4 flex gap-4 print:hidden">
-        <button
-          onClick={() => window.print()}
-          className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 shadow-lg"
-        >
-          🖨️ Imprimer cette facture
-        </button>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="px-6 py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 shadow-lg"
-        >
-          📄 Nouveau fichier
-        </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 shadow-lg"
+            >
+              🖨️ Imprimer cette facture
+            </button>
+            
+            <button
+              onClick={printAllInvoices}
+              disabled={isPrintingAll}
+              className="px-6 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 shadow-lg disabled:bg-gray-400"
+            >
+              📑 {isPrintingAll ? 'Impression en cours...' : 'Imprimer toutes'}
+            </button>
+          </div>
+
+          <button
+            onClick={() => setCurrentIndex(Math.min(invoicesData.length - 1, currentIndex + 1))}
+            disabled={currentIndex === invoicesData.length - 1}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg disabled:bg-gray-300 hover:bg-purple-700 font-semibold"
+          >
+            Suivante ▶
+          </button>
+        </div>
       </div>
 
       {/* Facture */}
@@ -169,8 +192,12 @@ export default function Factures() {
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
-            <LogoSVG />
-            <div className="text-xs leading-relaxed text-gray-700">
+            <div className="inline-block bg-gradient-to-r from-red-600 to-black px-6 py-3 rounded-xl shadow-lg mb-4">
+              <h1 className="text-2xl font-black text-white tracking-tight">
+                City<span className="text-red-300">Cosy</span>
+              </h1>
+            </div>
+            <div className="text-xs leading-relaxed text-gray-700 mt-2">
               <strong className="block text-sm mb-1">CityCosy Strasbourg (SAS Omnia)</strong>
               14 rue des Bonnes Gens<br/>67000 - STRASBOURG<br/>France<br/>
               Tél. : 03.69.23.21.02<br/>Port. : 06.19.35.29.88<br/>
