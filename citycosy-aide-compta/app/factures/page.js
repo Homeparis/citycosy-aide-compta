@@ -118,7 +118,7 @@ export default function Factures() {
     }
   };
 
- const genererFactures = (doc, row) => {
+ const genererFacture = (doc, row) => {
   // Couleurs CityCosy
   const rouge = [220, 38, 38];
   const noir = [17, 24, 39];
@@ -318,7 +318,7 @@ export default function Factures() {
   doc.line(20, 267, 190, 267);
 };
 
-  const genererFactures = (doc, row) => {
+  const genererFactureProprietaire = (doc, row) => {
     doc.setFontSize(10);
     doc.text('CityCosy Strasbourg (SAS Omnia)', 105, 20, { align: 'center' });
     doc.text('14 rue des Bonnes Gens - 67000 STRASBOURG', 105, 25, { align: 'center' });
@@ -374,6 +374,40 @@ export default function Factures() {
 
     doc.setFontSize(7);
     doc.text('OMNIA - 14 rue des Bonnes Gens 67000 STRASBOURG - SIRET : 84511118600019', 105, 270, { align: 'center' });
+  };
+
+  // =========================
+  // AJOUT : générer 1 PDF unique pour toutes les lignes CSV
+  // =========================
+  const genererFactures = async () => {
+    if (!csvData.length) return;
+    try {
+      setIsGenerating(true);
+
+      // Import dynamique côté client
+      const { jsPDF } = await import('jspdf');
+
+      // PDF A4 en mm
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      csvData.forEach((row, idx) => {
+        if (idx > 0) doc.addPage(); // une page par facture
+        if (typeFacture === 'locataire') {
+          genererFacture(doc, row);
+        } else {
+          genererFactureProprietaire(doc, row);
+        }
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const filename = `Factures_${typeFacture || 'all'}_${today}.pdf`;
+      doc.save(filename);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur pendant la génération du PDF.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -505,6 +539,3 @@ export default function Factures() {
     </div>
   );
 }
-
-
-
