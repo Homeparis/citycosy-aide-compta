@@ -123,80 +123,191 @@ export default function FacturesGestion() {
   };
 
   const genererFactureProprietaire = (doc, row) => {
-    // En-tête CityCosy
-    doc.setFontSize(10);
-    doc.text('CityCosy Strasbourg (SAS Omnia)', 105, 20, { align: 'center' });
-    doc.text('14 rue des Bonnes Gens', 105, 25, { align: 'center' });
-    doc.text('67000 - STRASBOURG', 105, 30, { align: 'center' });
-    doc.text('France', 105, 35, { align: 'center' });
-    doc.setFontSize(8);
-    doc.text('Tél. : 03.69.23.21.02 - Siret : 84511118600019', 105, 40, { align: 'center' });
-    doc.text('Port. : 06.19.35.29.88', 105, 45, { align: 'center' });
-    doc.text('Email : pierre@citycosy.com', 105, 50, { align: 'center' });
+  // Couleurs CityCosy
+  const rouge = [220, 38, 38]; // Rouge CityCosy
+  const noir = [17, 24, 39]; // Noir élégant
+  const gris = [107, 114, 128]; // Gris pour textes secondaires
+  const grisClair = [243, 244, 246]; // Fond gris clair
 
-    // Titre FACTURE
-    doc.setFontSize(24);
-    doc.setTextColor(255, 0, 0);
-    doc.text('Facture', 150, 20);
-    doc.setTextColor(0, 0, 0);
+  // ============ EN-TÊTE AVEC FOND GRIS ============
+  doc.setFillColor(...grisClair);
+  doc.rect(0, 0, 210, 65, 'F');
 
-    // Numéro et date
-    doc.setFontSize(10);
-    doc.text(`N° : ${row['N° Facture']}`, 20, 70);
-    doc.text(`Date : ${row['Date Facture']}`, 20, 76);
-    doc.text(`N° client : ${row['N° Client']}`, 20, 82);
+  // Logo/Nom CityCosy (gauche)
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...rouge);
+  doc.text('CityCosy', 20, 20);
+  doc.setFontSize(9);
+  doc.setTextColor(...noir);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Strasbourg', 20, 25);
 
-    // Propriétaire
-    doc.text(row['Propriétaire Nom'], 150, 70);
-    doc.text(row['Propriétaire Adresse'] || 'xx', 150, 76);
-    const cpVille = `${row['Propriétaire CP'] || ''} ${row['Propriétaire Ville'] || ''}`.trim() || 'xx xx';
-    doc.text(cpVille, 150, 82);
+  // Coordonnées entreprise (gauche, petit)
+  doc.setFontSize(8);
+  doc.setTextColor(...gris);
+  doc.text('SAS Omnia', 20, 32);
+  doc.text('14 rue des Bonnes Gens', 20, 36);
+  doc.text('67000 STRASBOURG', 20, 40);
+  doc.text('Tél. : 03.69.23.21.02', 20, 44);
+  doc.text('Port. : 06.19.35.29.88', 20, 48);
+  doc.text('pierre@citycosy.com', 20, 52);
+  doc.text('SIRET : 84511118600019', 20, 56);
 
-    // Référence
-    doc.setFontSize(11);
-    doc.setTextColor(255, 0, 0);
-    doc.text(`Réf. : ${row['Référence']}`, 20, 100);
-    doc.setTextColor(0, 0, 0);
+  // FACTURE (droite, grand)
+  doc.setFontSize(32);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...rouge);
+  doc.text('FACTURE', 210, 30, { align: 'right' });
 
-    // Calcul des montants
-    const montantTTC = parseFloat(String(row['Montant TTC']).replace(',', '.')) || 0;
-    const montantHT = montantTTC / 1.20;
-    const tva = montantTTC - montantHT;
+  // Ligne de séparation rouge
+  doc.setDrawColor(...rouge);
+  doc.setLineWidth(1);
+  doc.line(20, 68, 190, 68);
 
-    // Tableau des montants
-    let yPos = 115;
-    doc.setFontSize(10);
-    doc.text('Libellé', 25, yPos);
-    doc.text('Montant HT', 145, yPos);
-    
-    yPos += 8;
-    doc.text('S002 - Frais de gestion', 25, yPos);
-    doc.text(`${montantHT.toFixed(2)} €`, 145, yPos);
+  // ============ INFOS FACTURE ET CLIENT ============
+  let yPos = 78;
 
-    yPos += 20;
-    doc.text('Total HT', 130, yPos);
-    doc.text(`${montantHT.toFixed(2)} €`, 170, yPos, { align: 'right' });
-    yPos += 6;
-    doc.text('TVA (20%)', 130, yPos);
-    doc.text(`${tva.toFixed(2)} €`, 170, yPos, { align: 'right' });
-    yPos += 8;
-    
-    // Total TTC en rouge
-    doc.setFillColor(255, 0, 0);
-    doc.rect(125, yPos - 6, 60, 8, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.text('Total TTC', 130, yPos);
-    doc.text(`${montantTTC.toFixed(2)} €`, 180, yPos, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
+  // Bloc gauche : Infos facture
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...noir);
+  doc.text('N° Facture :', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(row['N° Facture'], 50, yPos);
 
-    yPos += 15;
-    doc.text('Échéance(s)', 20, yPos);
-    doc.text(`${montantTTC.toFixed(2)} € au ${row['Échéance']}`, 60, yPos);
+  yPos += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Date :', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(row['Date Facture'], 50, yPos);
 
-    // Footer
-    doc.setFontSize(7);
-    doc.text('OMNIA - 14 rue des Bonnes Gens 67000 STRASBOURG - SIRET : 84511118600019', 105, 270, { align: 'center' });
-  };
+  yPos += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text('N° Client :', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(row['N° Client'], 50, yPos);
+
+  // Bloc droit : Propriétaire (encadré)
+  doc.setDrawColor(...gris);
+  doc.setLineWidth(0.3);
+  doc.rect(110, 75, 80, 25);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...noir);
+  doc.text('PROPRIÉTAIRE', 115, 80);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const nomProp = row['Propriétaire Nom'];
+  doc.text(nomProp.length > 35 ? nomProp.substring(0, 35) + '...' : nomProp, 115, 86);
+  
+  const adresse = row['Propriétaire Adresse'] || '';
+  doc.setFontSize(8);
+  doc.text(adresse.length > 40 ? adresse.substring(0, 40) + '...' : adresse, 115, 91);
+  
+  const cpVille = `${row['Propriétaire CP'] || ''} ${row['Propriétaire Ville'] || ''}`.trim();
+  doc.text(cpVille, 115, 95);
+
+  // ============ RÉFÉRENCE (bandeau rouge) ============
+  yPos = 108;
+  doc.setFillColor(...rouge);
+  doc.rect(20, yPos, 170, 8, 'F');
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf. : ${row['Référence']}`, 25, yPos + 5.5);
+
+  // ============ TABLEAU DES PRESTATIONS ============
+  yPos = 125;
+
+  // En-tête tableau (fond gris)
+  doc.setFillColor(...grisClair);
+  doc.rect(20, yPos, 170, 8, 'F');
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...noir);
+  doc.text('Description', 25, yPos + 5.5);
+  doc.text('Montant HT', 165, yPos + 5.5, { align: 'right' });
+
+  // Ligne tableau
+  yPos += 8;
+  doc.setDrawColor(...gris);
+  doc.setLineWidth(0.2);
+  doc.line(20, yPos, 190, yPos);
+
+  yPos += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  
+  const montantTTC = parseFloat(String(row['Montant TTC']).replace(',', '.')) || 0;
+  const montantHT = montantTTC / 1.20;
+  const tva = montantTTC - montantHT;
+
+  doc.text('S002 - Frais de gestion', 25, yPos);
+  doc.text(`${montantHT.toFixed(2)} €`, 185, yPos, { align: 'right' });
+
+  yPos += 15;
+  doc.line(20, yPos, 190, yPos);
+
+  // ============ TOTAUX (encadré à droite) ============
+  yPos += 10;
+  
+  // Total HT
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Total HT', 130, yPos);
+  doc.text(`${montantHT.toFixed(2)} €`, 185, yPos, { align: 'right' });
+
+  yPos += 7;
+  // TVA
+  doc.text('TVA (20%)', 130, yPos);
+  doc.text(`${tva.toFixed(2)} €`, 185, yPos, { align: 'right' });
+
+  yPos += 10;
+  // Total TTC (en rouge, encadré)
+  doc.setFillColor(...rouge);
+  doc.rect(125, yPos - 6, 65, 10, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TOTAL TTC', 130, yPos);
+  doc.text(`${montantTTC.toFixed(2)} €`, 185, yPos, { align: 'right' });
+
+  // ============ ÉCHÉANCE ============
+  yPos += 18;
+  doc.setFillColor(...grisClair);
+  doc.rect(20, yPos - 5, 170, 10, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...noir);
+  doc.text('Échéance de paiement :', 25, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${montantTTC.toFixed(2)} € au ${row['Échéance']}`, 75, yPos);
+
+  // ============ PIED DE PAGE ============
+  doc.setFontSize(7);
+  doc.setTextColor(...gris);
+  doc.setFont('helvetica', 'normal');
+  
+  const footer1 = 'OMNIA - SAS au capital de 2000€ - 14 rue des Bonnes Gens, 67000 STRASBOURG';
+  const footer2 = 'SIRET : 84511118600019 - N° TVA : FR47845111186';
+  const footer3 = 'Carte professionnelle CPI 6701 2019 000 040 008 - RC Pro AXA France IARD';
+  
+  doc.text(footer1, 105, 270, { align: 'center' });
+  doc.text(footer2, 105, 274, { align: 'center' });
+  doc.text(footer3, 105, 278, { align: 'center' });
+
+  // Ligne de séparation footer
+  doc.setDrawColor(...gris);
+  doc.setLineWidth(0.2);
+  doc.line(20, 267, 190, 267);
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -324,3 +435,4 @@ export default function FacturesGestion() {
     </div>
   );
 }
+
