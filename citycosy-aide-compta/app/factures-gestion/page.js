@@ -13,7 +13,8 @@ export default function FacturesGestion() {
     const lines = text.split('\n').filter(line => line.trim());
     if (lines.length === 0) return [];
     
-    const headers = lines[0].split(';').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Utiliser la virgule comme séparateur
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
     
     return lines.slice(1).map(line => {
       const values = [];
@@ -24,14 +25,14 @@ export default function FacturesGestion() {
         const char = line[i];
         if (char === '"') {
           inQuotes = !inQuotes;
-        } else if (char === ';' && !inQuotes) {
-          values.push(current.trim().replace(/^"|"$/g, ''));
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
           current = '';
         } else {
           current += char;
         }
       }
-      values.push(current.trim().replace(/^"|"$/g, ''));
+      values.push(current.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
       
       const row = {};
       headers.forEach((header, i) => {
@@ -158,7 +159,7 @@ export default function FacturesGestion() {
     doc.setTextColor(0, 0, 0);
 
     // Calcul des montants
-    const montantTTC = parseFloat(row['Montant TTC'].replace(',', '.')) || 0;
+    const montantTTC = parseFloat(String(row['Montant TTC']).replace(',', '.')) || 0;
     const montantHT = montantTTC / 1.20;
     const tva = montantTTC - montantHT;
 
@@ -272,7 +273,7 @@ export default function FacturesGestion() {
                 </thead>
                 <tbody>
                   {csvData.slice(0, 10).map((row, i) => {
-                    const montantTTC = parseFloat(row['Montant TTC'].replace(',', '.'));
+                    const montantTTC = parseFloat(String(row['Montant TTC']).replace(',', '.'));
                     
                     return (
                       <tr key={i} className="border-t">
