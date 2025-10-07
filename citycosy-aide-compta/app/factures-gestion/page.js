@@ -158,7 +158,7 @@ export default function FacturesGestion() {
   doc.setFontSize(32);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...rouge);
-  doc.text('FACTURE', 210, 30, { align: 'right' });
+  doc.text('FACTURE', 170, 30, { align: 'right' });
 
   // Ligne de séparation rouge
   doc.setDrawColor(...rouge);
@@ -435,4 +435,5 @@ export default function FacturesGestion() {
     </div>
   );
 }
+
 
