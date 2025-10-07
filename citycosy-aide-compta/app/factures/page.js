@@ -200,7 +200,7 @@ export default function Factures() {
   doc.text(nomClient.length > 35 ? nomClient.substring(0, 35) + '...' : nomClient, 115, 86);
   
   doc.setFontSize(8);
-  doc.text(''XXXX\nXXXX\nXXXX'', 115, 91);
+  doc.text('XXXX\nXXXX\nXXXX', 115, 91);
 
   // ============ RÉFÉRENCE (bandeau rouge) ============
   yPos = 108;
@@ -539,4 +539,5 @@ export default function Factures() {
     </div>
   );
 }
+
 
