@@ -154,7 +154,7 @@ export default function Factures() {
   doc.setFontSize(32);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...rouge);
-  doc.text('FACTURE', 210, 30, { align: 'right' });
+  doc.text('FACTURE', 150, 30, { align: 'right' });
 
   // Ligne de séparation rouge
   doc.setDrawColor(...rouge);
@@ -200,7 +200,7 @@ export default function Factures() {
   doc.text(nomClient.length > 35 ? nomClient.substring(0, 35) + '...' : nomClient, 115, 86);
   
   doc.setFontSize(8);
-  doc.text('Adresse confidentielle', 115, 91);
+  doc.text(''XXXX\nXXXX\nXXXX'', 115, 91);
 
   // ============ RÉFÉRENCE (bandeau rouge) ============
   yPos = 108;
@@ -539,3 +539,4 @@ export default function Factures() {
     </div>
   );
 }
+
