@@ -15,7 +15,8 @@ export default function Factures() {
     const lines = text.split('\n').filter(line => line.trim());
     if (lines.length === 0) return [];
     
-    const headers = lines[0].split(';').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Utiliser la virgule comme séparateur
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
     
     return lines.slice(1).map(line => {
       const values = [];
@@ -26,14 +27,14 @@ export default function Factures() {
         const char = line[i];
         if (char === '"') {
           inQuotes = !inQuotes;
-        } else if (char === ';' && !inQuotes) {
-          values.push(current.trim().replace(/^"|"$/g, ''));
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
           current = '';
         } else {
           current += char;
         }
       }
-      values.push(current.trim().replace(/^"|"$/g, ''));
+      values.push(current.trim().replace(/^"|"$/g, '').replace(/\r/g, ''));
       
       const row = {};
       headers.forEach((header, i) => {
@@ -117,7 +118,6 @@ export default function Factures() {
     }
   };
 
-  // ========== MODIFICATION ICI : UN SEUL PDF ==========
   const genererFactures = async () => {
     if (csvData.length === 0) {
       alert('Veuillez charger un CSV');
@@ -131,7 +131,7 @@ export default function Factures() {
 
     setIsGenerating(true);
 
-    // Import dynamique de jsPDF (JSZip n'est plus nécessaire)
+    // Import dynamique de jsPDF
     const { jsPDF } = await import('jspdf');
 
     // Créer UN SEUL document PDF
@@ -166,7 +166,6 @@ export default function Factures() {
     setIsGenerating(false);
     alert(`✅ ${csvData.length} factures générées dans UN SEUL PDF !`);
   };
-  // ========== FIN DE LA MODIFICATION ==========
 
   const genererFactureLocataire = (doc, row) => {
     // En-tête CityCosy
@@ -205,8 +204,8 @@ export default function Factures() {
     doc.setTextColor(0, 0, 0);
 
     // Tableau des montants
-    const fraisAgence = parseFloat(row['Frais Agence TTC'].replace(',', '.')) || 0;
-    const fraisMenage = row['Frais Ménage TTC'] ? parseFloat(row['Frais Ménage TTC'].replace(',', '.')) : 0;
+    const fraisAgence = parseFloat(String(row['Frais Agence TTC']).replace(',', '.')) || 0;
+    const fraisMenage = row['Frais Ménage TTC'] ? parseFloat(String(row['Frais Ménage TTC']).replace(',', '.')) : 0;
 
     const totalTTC = fraisAgence + fraisMenage;
     const totalHT = totalTTC / 1.20;
@@ -275,14 +274,15 @@ export default function Factures() {
 
     doc.text(row['Propriétaire Nom'], 150, 60);
     doc.text(row['Propriétaire Adresse'] || 'xx', 150, 66);
-    doc.text(row['Propriétaire CP Ville'] || 'xx xx', 150, 72);
+    const cpVille = `${row['Propriétaire CP'] || ''} ${row['Propriétaire Ville'] || ''}`.trim() || 'xx xx';
+    doc.text(cpVille, 150, 72);
 
     doc.setFontSize(11);
     doc.setTextColor(255, 0, 0);
     doc.text(`Réf. : ${row['Référence']}`, 20, 90);
     doc.setTextColor(0, 0, 0);
 
-    const montantTTC = parseFloat(row['Montant TTC'].replace(',', '.')) || 0;
+    const montantTTC = parseFloat(String(row['Montant TTC']).replace(',', '.')) || 0;
     const montantHT = montantTTC / 1.20;
     const tva = montantTTC - montantHT;
 
@@ -391,8 +391,8 @@ export default function Factures() {
                 <tbody>
                   {csvData.slice(0, 10).map((row, i) => {
                     const montantTTC = typeFacture === 'locataire'
-                      ? parseFloat(row['Frais Agence TTC'].replace(',', '.')) + parseFloat((row['Frais Ménage TTC'] || '0').replace(',', '.'))
-                      : parseFloat(row['Montant TTC'].replace(',', '.'));
+                      ? parseFloat(String(row['Frais Agence TTC']).replace(',', '.')) + parseFloat(String(row['Frais Ménage TTC'] || '0').replace(',', '.'))
+                      : parseFloat(String(row['Montant TTC']).replace(',', '.'));
                     
                     return (
                       <tr key={i} className="border-t">
