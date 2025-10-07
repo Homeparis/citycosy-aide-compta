@@ -118,7 +118,7 @@ export default function Factures() {
     }
   };
 
- const genererFacture = (doc, row) => {
+ const genererFactures = (doc, row) => {
   // Couleurs CityCosy
   const rouge = [220, 38, 38];
   const noir = [17, 24, 39];
@@ -318,7 +318,7 @@ export default function Factures() {
   doc.line(20, 267, 190, 267);
 };
 
-  const genererFactureProprietaire = (doc, row) => {
+  const genererFactures = (doc, row) => {
     doc.setFontSize(10);
     doc.text('CityCosy Strasbourg (SAS Omnia)', 105, 20, { align: 'center' });
     doc.text('14 rue des Bonnes Gens - 67000 STRASBOURG', 105, 25, { align: 'center' });
@@ -505,5 +505,6 @@ export default function Factures() {
     </div>
   );
 }
+
 
 
