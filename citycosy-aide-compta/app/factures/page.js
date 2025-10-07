@@ -118,7 +118,7 @@ export default function Factures() {
     }
   };
 
- const genererFactureLocataire = (doc, row) => {
+ const genererFacture = (doc, row) => {
   // Couleurs CityCosy
   const rouge = [220, 38, 38];
   const noir = [17, 24, 39];
@@ -505,4 +505,5 @@ export default function Factures() {
     </div>
   );
 }
+
 
