@@ -318,7 +318,7 @@ export default function Home() {
             <h1 className="text-5xl font-black text-white tracking-tight">
               City<span className="text-red-300">Cosy</span>
             </h1>
-            <div className="text-red-400 text-xs font-mono mt-1">v30</div>
+            <div className="text-red-400 text-xs font-mono mt-1">v2</div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Aide Comptabilité
@@ -504,5 +504,6 @@ export default function Home() {
     </div>
   );
 }
+
 
 
