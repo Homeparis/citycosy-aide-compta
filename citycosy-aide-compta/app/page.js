@@ -327,12 +327,12 @@ export default function Home() {
           
           <Link href="/factures">
             <button className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg">
-              Générer des Factures
+              🏡Factures Locataires📄
             </button>
           </Link>
 <Link href="/factures-gestion">
   <button className="mt-4 bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg">
-    📊 Factures de Gestion
+    📊 Factures de Gestion 💰
   </button>
 </Link>
         </div>
@@ -504,4 +504,5 @@ export default function Home() {
     </div>
   );
 }
+
 
