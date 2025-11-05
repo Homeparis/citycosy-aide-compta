@@ -125,6 +125,7 @@ export default function Home() {
       return;
     }
 
+    // ✅ ÉTAPE 1 : Grouper les paiements Airbnb par code
     const airbnbGrouped = {};
     airbnbData.forEach(row => {
       const code = row.codeResa;
@@ -145,14 +146,45 @@ export default function Home() {
     console.log('Codes Airbnb trouvés:', Object.keys(airbnbGrouped).filter(k => k !== '_SANS_DETAIL'));
     console.log('Codes Lodgify:', lodgifyData.map(l => l.codeResa).filter(c => c));
 
+    // ✅ ÉTAPE 2 : Dédupliquer et calculer les sommes
     const airbnbSums = {};
     Object.keys(airbnbGrouped).forEach(code => {
       const payments = airbnbGrouped[code];
-      const sum = payments.reduce((acc, p) => acc + p.montant, 0);
+      
+      // Trier par date pour avoir un ordre chronologique
+      payments.sort((a, b) => {
+        const dateA = new Date(a.date || '1970-01-01');
+        const dateB = new Date(b.date || '1970-01-01');
+        return dateA - dateB;
+      });
+      
+      // ✅ Dédupliquer : même montant + même date = 1 seule ligne
+      const unique = [];
+      const seen = new Set();
+      
+      for (const payment of payments) {
+        const key = `${payment.montant.toFixed(2)}_${payment.date}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(payment);
+        }
+      }
+      
+      // Calculer la somme et le détail
+      const sum = unique.reduce((acc, p) => acc + p.montant, 0);
+      let detailPaiements = '';
+      
+      if (unique.length > 1) {
+        detailPaiements = unique
+          .map(p => `${p.montant.toFixed(2)}€ (${p.date || '?'})`)
+          .join(' + ');
+      }
+      
       airbnbSums[code] = {
         montantTotal: sum,
-        nbPaiements: payments.length,
-        details: payments
+        nbPaiements: unique.length,
+        detailPaiements: detailPaiements,
+        details: unique
       };
     });
 
@@ -160,6 +192,7 @@ export default function Home() {
     const processedAirbnbCodes = new Set();
     const alerts = [];
 
+    // ✅ ÉTAPE 3 : Traiter les réservations Lodgify
     lodgifyData.forEach(lodgify => {
       const code = lodgify.codeResa;
       
@@ -173,6 +206,11 @@ export default function Home() {
           alerte = `⚠️ ${matchingLodgify.length} réservations Lodgify avec ce code`;
           alerts.push(code);
         }
+        
+        // ✅ Ajouter l'alerte multi-paiements
+        if (airbnbInfo.nbPaiements > 1) {
+          alerte = alerte ? `${alerte} | MULTI_VERSEMENT (${airbnbInfo.nbPaiements} paiements)` : `MULTI_VERSEMENT (${airbnbInfo.nbPaiements} paiements)`;
+        }
 
         result.push({
           appartement: lodgify.appartement,
@@ -183,6 +221,7 @@ export default function Home() {
           montantFinal: airbnbInfo.montantTotal,
           montantOriginal: lodgify.montantOriginal,
           nbPaiements: airbnbInfo.nbPaiements,
+          detailPaiements: airbnbInfo.detailPaiements,
           site: 'Airbnb',
           statut: 'PAYÉ',
           alerte: alerte,
@@ -198,6 +237,7 @@ export default function Home() {
           montantFinal: lodgify.montantOriginal,
           montantOriginal: lodgify.montantOriginal,
           nbPaiements: 0,
+          detailPaiements: '',
           site: lodgify.source,
           statut: lodgify.source === 'Booking.com' ? 'CB Booking' : 
                   (lodgify.source === 'Manuel' || lodgify.source === 'Site web') ? 'Virement' : 
@@ -208,10 +248,16 @@ export default function Home() {
       }
     });
 
+    // ✅ ÉTAPE 4 : Airbnb-only
     Object.keys(airbnbSums).forEach(code => {
       if (code !== '_SANS_DETAIL' && !processedAirbnbCodes.has(code)) {
         const airbnbInfo = airbnbSums[code];
         const firstPayment = airbnbInfo.details[0];
+        
+        let alerte = '⚠️ Paiement Airbnb sans réservation Lodgify';
+        if (airbnbInfo.nbPaiements > 1) {
+          alerte += ` | MULTI_VERSEMENT (${airbnbInfo.nbPaiements} paiements)`;
+        }
         
         result.push({
           appartement: firstPayment.appartement,
@@ -222,14 +268,16 @@ export default function Home() {
           montantFinal: airbnbInfo.montantTotal,
           montantOriginal: 0,
           nbPaiements: airbnbInfo.nbPaiements,
+          detailPaiements: airbnbInfo.detailPaiements,
           site: 'Airbnb',
           statut: 'MANQUANT DANS LODGIFY',
-          alerte: '⚠️ Paiement Airbnb sans réservation Lodgify',
+          alerte: alerte,
           type: 'airbnb-only'
         });
       }
     });
 
+    // ✅ ÉTAPE 5 : Sans détail
     if (airbnbSums['_SANS_DETAIL']) {
       airbnbSums['_SANS_DETAIL'].details.forEach(payment => {
         result.push({
@@ -241,6 +289,7 @@ export default function Home() {
           montantFinal: payment.montant,
           montantOriginal: 0,
           nbPaiements: 1,
+          detailPaiements: '',
           site: 'Airbnb',
           statut: 'SANS DÉTAIL',
           alerte: '',
@@ -277,7 +326,7 @@ export default function Home() {
       return;
     }
     
-    const headers = ['Appartement', 'Arrivée', 'Départ', 'Client', 'Code Réservation', 'Montant', 'Nb Paiements', 'Site/OTA', 'Statut', 'Alerte'];
+    const headers = ['Appartement', 'Arrivée', 'Départ', 'Client', 'Code Réservation', 'Montant', 'Nb Paiements', 'Détail Paiements', 'Site/OTA', 'Statut', 'Alerte'];
     const csv = [
       headers.join(';'),
       ...fusedData.map(r => [
@@ -288,6 +337,7 @@ export default function Home() {
         r.codeResa,
         r.montantFinal.toFixed(2).replace('.', ',') + '€',
         r.nbPaiements > 1 ? r.nbPaiements : '',
+        `"${r.detailPaiements || ''}"`,
         r.site,
         r.statut,
         `"${r.alerte}"`
@@ -330,11 +380,11 @@ export default function Home() {
               🏡Factures Locataires📄
             </button>
           </Link>
-<Link href="/factures-gestion">
-  <button className="mt-4 bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg">
-    📊 Factures de Gestion 💰
-  </button>
-</Link>
+          <Link href="/factures-gestion">
+            <button className="mt-4 bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg">
+              📊 Factures de Gestion 💰
+            </button>
+          </Link>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -455,7 +505,12 @@ export default function Home() {
                         <td className="px-3 py-3 text-gray-700">{row.depart}</td>
                         <td className="px-3 py-3 text-gray-900">{row.client}</td>
                         <td className="px-3 py-3 text-xs text-gray-600">{row.codeResa}</td>
-                        <td className="px-3 py-3 text-right font-bold text-gray-900">{row.montantFinal.toFixed(2)}€</td>
+                        <td className="px-3 py-3 text-right">
+                          <div className="font-bold text-gray-900">{row.montantFinal.toFixed(2)}€</div>
+                          {row.detailPaiements && (
+                            <div className="text-xs text-orange-600 mt-1">{row.detailPaiements}</div>
+                          )}
+                        </td>
                         <td className="px-3 py-3 text-center">
                           {row.nbPaiements > 1 && (
                             <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
@@ -504,6 +559,3 @@ export default function Home() {
     </div>
   );
 }
-
-
-
